@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.1)'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Get all history for proper versioning
+
+      - name: Update version in code
+        run: |
+          # Update version in your JS file
+          sed -i 's/console.info("%c⚡Compact Power Card CF %c [0-9.]* "/console.info("%c⚡Compact Power Card CF %c ${{ inputs.version }} "/' compact-power-card-cf.js
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add compact-power-card-cf.js
+          git commit -m "Bump version to ${{ inputs.version }}"
+          git push
+
+      - name: Create tag
+        run: |
+          git tag v${{ inputs.version }}
+          git push origin v${{ inputs.version }}
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Release v${{ inputs.version }}
+          generate_release_notes: true
+          files: compact-power-card-cf.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

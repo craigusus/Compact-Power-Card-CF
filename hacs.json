@@ -1,0 +1,7 @@
+{
+  "name": "Compact Power Card CF",
+  "homeassistant": "2024.1.0",
+  "content_in_root": true,
+  "filename": "compact-power-card-cf.js",
+  "render_readme": true
+}
