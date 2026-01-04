@@ -2,8 +2,8 @@
 This project is a fork of https://github.com/pacemaker82/Compact-Power-Card by @pacemaker82.   
 All original credit belongs to the author.   
 This fork contains local modifications (using my friend [Claude](https://www.claude.com/product/claude-code)) to suit my custom 'off-grid' solar installation.   
-
-<img width="760" height="286" alt="{010D150C-8B3F-4EAC-A65D-1036CF797096}" src="https://github.com/craigusus/Compact-Power-Card-CF/blob/main/Animation.gif" />   
+   
+<img width="756" height="284" alt="{4AE6E87B-4FD0-45B2-81D5-AED41052129E}" src="https://github.com/user-attachments/assets/ae0f3080-efd5-42e2-8ba2-a4f3593b98f6" />
 
 ```yaml
 type: custom:compact-power-card-cf
