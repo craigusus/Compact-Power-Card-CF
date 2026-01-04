@@ -3118,7 +3118,9 @@ class CompactPowerCard extends (window.LitElement ||
   }
 }
 
-customElements.define("compact-power-card-cf", CompactPowerCard);
+if (!customElements.get("compact-power-card-cf")) {
+  customElements.define("compact-power-card-cf", CompactPowerCard);
+}
 
 console.info("%c⚡Compact Power Card CF %c 1.0.1 ", "padding: 3px; color: black; background: #FFD700;", "padding: 3px; color: black; background: white;");
 
