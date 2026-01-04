@@ -25,14 +25,6 @@ jobs:
           # Update version in your JS file
           sed -i 's/console.info("%c⚡Compact Power Card CF %c [0-9.]* "/console.info("%c⚡Compact Power Card CF %c ${{ inputs.version }} "/' compact-power-card-cf.js
 
-      - name: Commit version bump
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add compact-power-card-cf.js
-          git commit -m "Bump version to ${{ inputs.version }}"
-          git push
-
       - name: Create tag
         run: |
           git tag v${{ inputs.version }}
