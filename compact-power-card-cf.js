@@ -489,6 +489,7 @@ class CompactPowerCard extends (window.LitElement ||
         background: var(--ha-card-background, var(--card-background-color));
         box-shadow: var(--ha-card-box-shadow);
         position: relative;
+        z-index: 1;
         height: 100%;
       }
 
