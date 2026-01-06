@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Get all history for proper versioning
+          fetch-depth: 0
 
       - name: Update version in code
         run: |
