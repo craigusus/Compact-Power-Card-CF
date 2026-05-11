@@ -1,29 +1,37 @@
-const compactPowerCardPanel =
-  customElements.get("ha-panel-lovelace") || customElements.get("hui-masonry-view");
+async function _initCompactPowerCard() {
+  const _timeout = new Promise((r) => setTimeout(r, 10000));
+  await Promise.race([
+    customElements.whenDefined("ha-panel-lovelace"),
+    customElements.whenDefined("hui-masonry-view"),
+    _timeout,
+  ]).catch(() => {});
 
-const CompactPowerCardBase =
-  (compactPowerCardPanel && Object.getPrototypeOf(compactPowerCardPanel)) ||
-  window.LitElement;
+  const compactPowerCardPanel =
+    customElements.get("ha-panel-lovelace") || customElements.get("hui-masonry-view");
 
-const compactPowerCardHtml =
-  (typeof window.html === "function" && window.html) ||
-  (typeof CompactPowerCardBase?.prototype?.html === "function" &&
-    CompactPowerCardBase.prototype.html) ||
-  (typeof window.LitElement?.prototype?.html === "function" &&
-    window.LitElement.prototype.html);
+  const CompactPowerCardBase =
+    (compactPowerCardPanel && Object.getPrototypeOf(compactPowerCardPanel)) ||
+    window.LitElement;
 
-const compactPowerCardCss =
-  (typeof window.css === "function" && window.css) ||
-  (typeof CompactPowerCardBase?.prototype?.css === "function" &&
-    CompactPowerCardBase.prototype.css) ||
-  (typeof window.LitElement?.prototype?.css === "function" &&
-    window.LitElement.prototype.css);
+  const compactPowerCardHtml =
+    (typeof window.html === "function" && window.html) ||
+    (typeof CompactPowerCardBase?.prototype?.html === "function" &&
+      CompactPowerCardBase.prototype.html) ||
+    (typeof window.LitElement?.prototype?.html === "function" &&
+      window.LitElement.prototype.html);
 
-if (!CompactPowerCardBase || !compactPowerCardHtml || !compactPowerCardCss) {
-  throw new Error(
-    "compact-power-card-cf: Failed to resolve Lit html/css helpers from the Home Assistant frontend."
-  );
-}
+  const compactPowerCardCss =
+    (typeof window.css === "function" && window.css) ||
+    (typeof CompactPowerCardBase?.prototype?.css === "function" &&
+      CompactPowerCardBase.prototype.css) ||
+    (typeof window.LitElement?.prototype?.css === "function" &&
+      window.LitElement.prototype.css);
+
+  if (!CompactPowerCardBase || !compactPowerCardHtml || !compactPowerCardCss) {
+    throw new Error(
+      "compact-power-card-cf: Failed to resolve Lit html/css helpers from the Home Assistant frontend."
+    );
+  }
 
 class CompactPowerCard extends CompactPowerCardBase {
 
@@ -3170,3 +3178,6 @@ if (window?.customCards) {
     },
   ];
 }
+} // end _initCompactPowerCard
+
+_initCompactPowerCard();
