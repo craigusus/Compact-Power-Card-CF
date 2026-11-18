@@ -82,7 +82,7 @@ entities:
 
 This card is designed for the new [Home Assistant Sections UI](https://www.home-assistant.io/dashboards/sections/), introduced in 2024. This allows you to scale the card horizontally or vertically as you see fit. The card will dynamically resize to fit the rows and columns you setup in the card UI.
 
-**Note:** Caps are in place for the default size of the card (12 columns, 3 rows): 2 Grid, 2 Battery, 4 PV labels, 8 Devices.
+**Note:** Caps are in place for the default size of the card (12 columns, 3 rows): 2 Grid, 2 Battery, 4 PV labels, 8 Devices (extra devices wrap onto additional rows).
 
 <img width="1000" height="741" alt="Screenshot 2025-12-18 at 10 41 00" src="https://github.com/user-attachments/assets/e0a1a5e2-8567-4c69-ad4e-c4cb7b0ec984" />
 
@@ -233,7 +233,7 @@ Devices are power feeds within your home that you want to show in the card. By d
 
 <img width="746" height="97" alt="Screenshot 2026-01-03 at 07 34 56" src="https://github.com/user-attachments/assets/e19c6c40-aec6-456c-80ac-3b307d663f3b" />
 
-**Important:** You can add as many devices as you want, however the display of them is determined by the card width, 12 columns = up to 8 devices, 24 columns = up to 16 devices. On small screens (phones) this will still be limited to 8 devices, unless in landscape mode where you should have more real estate.
+**Important:** You can add as many devices as you want. The first 8 sit either side of the home icon; any further devices wrap onto extra rows of up to 9 below it, and the card grows one grid row taller for each extra row. Device power lines are only drawn for the first 8.
 
 | Name                    | Setting slug                      | What it does                                                                     |
 | ----------------------- | --------------------------------- | -------------------------------------------------------------------------------- |
@@ -319,7 +319,7 @@ Battery labels are setup differently (due to the nature of supporting multi-batt
 
 **Important:** you must increase the size of the card to see more labels/devices. Just adding them to the card configuration / YAML is not enough, the card hides them if rows/column minimums aren't met.
 
-There are cap limits in place for the default size of the card (12 columns, 3 rows): 2 Grid, 2 Battery, 4 PV labels, 8 Devices.
+There are cap limits in place for the default size of the card (12 columns, 3 rows): 2 Grid, 2 Battery, 4 PV labels, 8 Devices (extra devices wrap onto additional rows).
 
 **Note:** There are of course theoretical limits due to the size of the cards which I cannot really avoid without making the UI tiny. In testing I am seeing 8 devices and PV labels for every 12 columns used, in theory grid and battery labels should be unlimited if you keep growing the card height. 
 

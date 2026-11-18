@@ -435,12 +435,32 @@ class CompactPowerCard extends CompactPowerCardBase {
   }    
 
   getGridOptions() {
+    const extraRows = this._config ? this._getExtraDeviceRowCount() : 0;
     return {
-      rows: 3,
+      rows: 3 + extraRows,
       columns: 12,
-      min_rows: 3,
+      min_rows: 3 + extraRows,
       min_columns: 9,
     };
+  }
+
+  // Devices beyond the home row wrap onto additional rows below it.
+  static get DEVICE_MAIN_ROW_MAX() {
+    return 8;
+  }
+
+  static get DEVICE_EXTRA_ROW_MAX() {
+    return 9;
+  }
+
+  static get DEVICE_EXTRA_ROW_HEIGHT() {
+    return 64; // matches one sections-grid row (56px + 8px gap)
+  }
+
+  _getExtraDeviceRowCount() {
+    const { sources } = this._getSourcesConfig();
+    const extra = Math.max(0, sources.length - CompactPowerCard.DEVICE_MAIN_ROW_MAX);
+    return Math.ceil(extra / CompactPowerCard.DEVICE_EXTRA_ROW_MAX);
   }
 
   static getStubConfig() {
@@ -1144,8 +1164,7 @@ class CompactPowerCard extends CompactPowerCardBase {
         }
         return null;
       })
-      .filter(Boolean)
-      .slice(0, 8);
+      .filter(Boolean);
   }
 
   _coerceBoolean(val, defaultVal = false) {
@@ -1789,9 +1808,9 @@ class CompactPowerCard extends CompactPowerCardBase {
 
     // Geometry helpers consistent with render()
     const designWidth = 512;
-    const designHeight = 184;
+    const designHeight = 184 + this._getExtraDeviceRowCount() * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
     const defaultWidth = 512;
-    const defaultHeight = 184;
+    const defaultHeight = designHeight;
     const hostRect = this.getBoundingClientRect ? this.getBoundingClientRect() : null;
     const outerWidth = this._hostWidth != null ? this._hostWidth : hostRect?.width || defaultWidth;
     const outerHeight =
@@ -2250,9 +2269,10 @@ class CompactPowerCard extends CompactPowerCardBase {
     const { sources: normalizedSources } = this._getSourcesConfig();
     const enableDevicePowerLines = this._useDevicePowerLines();
     const designWidth = 512;
-    const designHeight = 184;
+    const extraDeviceRows = this._getExtraDeviceRowCount();
+    const designHeight = 184 + extraDeviceRows * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
     const defaultWidth = 512;
-    const defaultHeight = 184;
+    const defaultHeight = designHeight;
     const hostRect = this.getBoundingClientRect ? this.getBoundingClientRect() : null;
     const outerWidth = this._hostWidth != null ? this._hostWidth : hostRect?.width || defaultWidth;
     const outerHeight =
@@ -2570,10 +2590,12 @@ class CompactPowerCard extends CompactPowerCardBase {
     const sourcePositions = [];
     const homeX = homeCenterX;
     const homeRowYBase = 145; // base Y for aux row; actual Y will be adjusted via pctHomeY
-    const maxDevices = Math.min(normalizedSources.length, 8);
+    const mainRowMax = CompactPowerCard.DEVICE_MAIN_ROW_MAX;
+    const extraRowMax = CompactPowerCard.DEVICE_EXTRA_ROW_MAX;
+    const maxDevices = Math.min(normalizedSources.length, mainRowMax);
 
     //
-    if (maxDevices > 0) {
+    if (normalizedSources.length > 0) {
       // Build outward from the home icon in viewBox coords; keep symmetric spacing and respect padding.
       const deviceWidth = baseWidth;
       const pad = Math.max(16, deviceWidth * 0.05);
@@ -2586,6 +2608,18 @@ class CompactPowerCard extends CompactPowerCardBase {
         const rawX = homeX + dir * spacing * ring;
         const clampedX = Math.max(pad, Math.min(deviceWidth - pad, rawX));
         sourcePositions.push({ x: clampedX, y: homeRowYBase, leftPct: (clampedX / deviceWidth) * 100 });
+      }
+
+      // Overflow devices: extra rows below the home row, centred, on the same column spacing.
+      const extraTotal = normalizedSources.length - maxDevices;
+      for (let j = 0; j < extraTotal; j++) {
+        const row = Math.floor(j / extraRowMax);
+        const idxInRow = j % extraRowMax;
+        const rowCount = Math.min(extraRowMax, extraTotal - row * extraRowMax);
+        const rawX = homeX + (idxInRow - (rowCount - 1) / 2) * spacing;
+        const clampedX = Math.max(pad, Math.min(deviceWidth - pad, rawX));
+        const y = homeRowYBase + (row + 1) * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
+        sourcePositions.push({ x: clampedX, y, leftPct: (clampedX / deviceWidth) * 100 });
       }
     }
 
@@ -2679,7 +2713,8 @@ class CompactPowerCard extends CompactPowerCardBase {
     const deviceJunctionTopPct = pctHomeY(homeRowYBase + 26);
     let deviceLines = [];
     if (enableDevicePowerLines) {
-      deviceLines = sourcePositions.map((pos, idx) => {
+      // Power lines only for the home row; extra rows would cut across the row above.
+      deviceLines = sourcePositions.slice(0, maxDevices).map((pos, idx) => {
         const src = sources[idx];
         if (!src?.isPowerDevice) return null;
         if (!src) return null;
@@ -3145,7 +3180,7 @@ class CompactPowerCard extends CompactPowerCardBase {
   }
 
   getCardSize() {
-    return 2;
+    return 2 + (this._config ? this._getExtraDeviceRowCount() : 0);
   }
 }
 
