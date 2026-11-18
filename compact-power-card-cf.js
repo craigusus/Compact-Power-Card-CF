@@ -436,12 +436,27 @@ class CompactPowerCard extends CompactPowerCardBase {
 
   getGridOptions() {
     const extraRows = this._config ? this._getExtraDeviceRowCount() : 0;
+    const topRows = this._config && this._getTopTrim() > 0 ? 1 : 0;
+    const rows = 3 - topRows + extraRows;
     return {
-      rows: 3 + extraRows,
+      rows,
       columns: 12,
-      min_rows: 3 + extraRows,
+      min_rows: rows,
       min_columns: 9,
     };
+  }
+
+  // Height (px) of the top band (PV / grid / battery area) that is dropped when none of
+  // those are configured, leaving just the home and device rows. Equal to one grid row.
+  _getTopTrim() {
+    const ents = this._config?.entities || {};
+    const has = (key) => {
+      const v = ents[key];
+      if (!v) return false;
+      if (Array.isArray(v)) return v.some((item) => this._extractEntityRef(item));
+      return Boolean(this._extractEntityRef(v));
+    };
+    return has("pv") || has("grid") || has("battery") ? 0 : 64;
   }
 
   // Devices beyond the home row wrap onto additional rows below it.
@@ -1821,7 +1836,9 @@ class CompactPowerCard extends CompactPowerCardBase {
 
     // Geometry helpers consistent with render()
     const designWidth = 512;
-    const designHeight = 184 + this._getExtraDeviceRowCount() * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
+    const topTrim = this._getTopTrim();
+    const designHeight =
+      184 - topTrim + this._getExtraDeviceRowCount() * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
     const defaultWidth = 512;
     const defaultHeight = designHeight;
     const hostRect = this.getBoundingClientRect ? this.getBoundingClientRect() : null;
@@ -1842,7 +1859,8 @@ class CompactPowerCard extends CompactPowerCardBase {
     const yScale = baseHeight / designHeight;
     const anchorLeftX = 51.2;
     const sx = (v) => v * xScale;
-    const yOffset = 4;
+    // With the top band trimmed, lift the home/device rows by the trimmed height (less 8px headroom).
+    const yOffset = 4 - (topTrim ? topTrim - 8 : 0);
     const syTop = (v) => v + yOffset; // fixed from top
     const sy = syTop;
     const syHome = (v) => baseHeight - (designHeight - (v + yOffset)); // fixed from bottom
@@ -2287,7 +2305,8 @@ class CompactPowerCard extends CompactPowerCardBase {
     const enableDevicePowerLines = this._useDevicePowerLines();
     const designWidth = 512;
     const extraDeviceRows = this._getExtraDeviceRowCount();
-    const designHeight = 184 + extraDeviceRows * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
+    const topTrim = this._getTopTrim();
+    const designHeight = 184 - topTrim + extraDeviceRows * CompactPowerCard.DEVICE_EXTRA_ROW_HEIGHT;
     const defaultWidth = 512;
     const defaultHeight = designHeight;
     const hostRect = this.getBoundingClientRect ? this.getBoundingClientRect() : null;
@@ -2309,7 +2328,8 @@ class CompactPowerCard extends CompactPowerCardBase {
     const viewHeight = baseHeight;
     const anchorLeftX = 51.2;
     const sx = (v) => v * xScale;
-    const yOffset = 4;
+    // With the top band trimmed, lift the home/device rows by the trimmed height (less 8px headroom).
+    const yOffset = 4 - (topTrim ? topTrim - 8 : 0);
     const syTop = (v) => v + yOffset; // keep fixed distance from top
     const sy = syTop;
     const syHome = (v) => baseHeight - (designHeight - (v + yOffset)); // keep fixed distance from bottom
