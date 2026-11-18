@@ -3206,7 +3206,7 @@ if (!customElements.get("compact-power-card-cf")) {
   customElements.define("compact-power-card-cf", CompactPowerCard);
 }
 
-console.info("%c⚡Compact Power Card CF %c 1.0.7 ", "padding: 3px; color: black; background: #FFD700;", "padding: 3px; color: black; background: white;");
+console.info("%c⚡Compact Power Card CF %c 1.0.8 ", "padding: 3px; color: black; background: #FFD700;", "padding: 3px; color: black; background: white;");
 
 // Register card metadata for the Lovelace card picker
 if (window?.customCards) {
