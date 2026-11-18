@@ -1628,15 +1628,26 @@ class CompactPowerCard extends CompactPowerCardBase {
   // Gauge-style colour segments: [{ from: 0, color: "green" }, { from: 100, color: "red" }].
   // The segment with the highest `from` that the value has reached wins; below all of them
   // (or for a non-numeric value) the fallback colour is used. `from` is in the entity's own unit.
-  _resolveSegmentColor(segments, value, fallback) {
+  // With `blend`, the colour fades from the reached segment towards the next one
+  // (e.g. halfway between from: 1500 orange and from: 3000 red at 2250).
+  _resolveSegmentColor(segments, value, fallback, blend = false) {
     if (!Array.isArray(segments) || !Number.isFinite(value)) return fallback;
-    let best = null;
-    for (const seg of segments) {
-      const from = Number(seg?.from);
-      if (!seg?.color || !Number.isFinite(from) || value < from) continue;
-      if (!best || from >= best.from) best = { from, color: seg.color };
+    const sorted = segments
+      .map((seg) => ({ from: Number(seg?.from), color: seg?.color }))
+      .filter((seg) => seg.color && Number.isFinite(seg.from))
+      .sort((a, b) => a.from - b.from);
+    let idx = -1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (value >= sorted[i].from) idx = i;
     }
-    return best ? best.color : fallback;
+    if (idx === -1) return fallback;
+    const cur = sorted[idx];
+    const next = sorted[idx + 1];
+    if (!blend || !next || next.from <= cur.from) return cur.color;
+    const t = Math.min(Math.max((value - cur.from) / (next.from - cur.from), 0), 1);
+    const pct = Math.round(t * 1000) / 10;
+    if (pct <= 0) return cur.color;
+    return `color-mix(in srgb, ${next.color} ${pct}%, ${cur.color})`;
   }
 
   _isBelowThreshold(value, threshold) {
@@ -2508,6 +2519,20 @@ class CompactPowerCard extends CompactPowerCardBase {
     const gridColor = this._getColor("grid", gridCfg);
     const homeColor = this._getColor("home", homeCfg);
     const batteryColor = this._getColor("battery", batteryCfg);
+    // Home icon/label colour can follow gauge-style segments, judged on the watts shown on the card.
+    // Only the house itself changes; device defaults and lines keep the base home colour.
+    const homeDisplayedW =
+      !forceRawHome && this._homeEffective != null
+        ? homeEffectiveW
+        : Number.isFinite(homeNumericW)
+        ? homeNumericW
+        : homeNumeric;
+    const homeMarkerColor = this._resolveSegmentColor(
+      homeCfg?.segments,
+      homeDisplayedW,
+      homeColor,
+      this._coerceBoolean(homeCfg?.segments_blend, false)
+    );
 
     const pvOpacity = this._opacityFor(pvNumericW, pvThresholdDisplay);
     const gridOpacity = this._opacityFor(gridNumericW, gridThresholdDisplay);
@@ -2709,7 +2734,12 @@ class CompactPowerCard extends CompactPowerCardBase {
       let val = Number.isFinite(numericW)
         ? this._formatPowerWithOverride(numericW, decimals, "W", unitOverride ?? null)
         : this._formatEntity(entity, decimals, attribute, unitOverride);
-      const color = this._resolveSegmentColor(src.segments, numeric, src.color || homeColor);
+      const color = this._resolveSegmentColor(
+        src.segments,
+        numeric,
+        src.color || homeColor,
+        this._coerceBoolean(src.segments_blend, false)
+      );
       const pos = sourcePositions[idx] || { x: homeX, y: homeRowYBase };
       const threshold = this._toWatts(this._parseThreshold(src.threshold), "W", true);
       const opacity = this._opacityFor(numericW, threshold);
@@ -3151,9 +3181,9 @@ class CompactPowerCard extends CompactPowerCardBase {
               >
                 <ha-icon
                   icon="${homeIcon}"
-                  style="color:${homeColor}; opacity:1;"
+                  style="color:${homeMarkerColor}; opacity:1;"
                 ></ha-icon>
-                <div class="home-label" style="color:${homeColor}; opacity:${homeLabelHidden ? 0.35 : homeOpacity};">${renderValue(homeVal)}</div>
+                <div class="home-label" style="color:${homeMarkerColor}; opacity:${homeLabelHidden ? 0.35 : homeOpacity};">${renderValue(homeVal)}</div>
               </div>
             </div>
             ${enableDevicePowerLines && hasDeviceSources && deviceUsageActive

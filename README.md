@@ -225,6 +225,20 @@ entities:
 
 ### Home specific
 - If `home` entity is provided, the card displays its raw value (minus any device sensor power usage if applicable), but it will not consider its value in any other power calculations. If the entity is omitted, home is inferred from pv/grid/battery power, minus any device power (if applicable). See devices below for more on including their power in the home calculation.
+- `home` also accepts gauge-style `segments` (`from` / `color`) to colour the house icon and value by the watts shown on the card. Only the house changes; devices and lines keep the base home colour. Add `segments_blend: true` to fade between the segment colours instead of switching at each `from`.
+
+```yaml
+  home:
+    entity: sensor.home_power
+    segments_blend: true
+    segments:
+      - from: 0
+        color: "#4db6ac"
+      - from: 1500
+        color: orange
+      - from: 3000
+        color: red
+```
 
 ## Devices
 
@@ -245,6 +259,7 @@ Devices are power feeds within your home that you want to show in the card. By d
 | Icon             | `icon`                  | Optional icon for the device badge.                                              |
 | Color            | `color`                 | Optional color override for that device.                                         |
 | Color segments   | `segments`              | Dynamic colour like the gauge card: a list of `from` / `color`. The segment with the highest `from` the value has reached is used; below all of them, `color` (or the default) applies. `from` is in the entity's own unit. |
+| Blend segments   | `segments_blend`        | If `true`, the colour fades smoothly from one segment's colour to the next instead of switching at each `from`. Default `false`. |
 | Threshold        | `threshold`             | Dims/zeros device below threshold (in watts) (per `threshold_mode`).                        |
 | Force hide under threshold | `force_hide_under_threshold` | If true, hides the device entirely when under threshold. Will hide at 0 W if no threshold set. |
 | Decimals         | `decimal_places`        | Decimal places for that device (defaults to card-level `decimal_places`).                                                  |
