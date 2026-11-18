@@ -544,6 +544,8 @@ class CompactPowerCard extends CompactPowerCardBase {
       }
 
       svg {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
         display: block;
@@ -838,6 +840,9 @@ class CompactPowerCard extends CompactPowerCardBase {
         position: relative;
         width: 100%;
         height: 100%;
+        /* Fill a grid-imposed height; otherwise fall back to the design height.
+           The SVG is absolutely positioned so it never drives the card's size. */
+        min-height: var(--cpc-design-height, 184px);
       }
 
       .overlay {
@@ -864,6 +869,13 @@ class CompactPowerCard extends CompactPowerCardBase {
       /* Anchor top-right without vertical centering (useful for stacked lists) */
       .overlay-item.anchor-right-top {
         transform: translate(-100%, 0);
+      }
+
+      :host(:not(.no-battery)) #line-grid-home,
+      :host(:not(.no-battery)) #dot-grid-home,
+      :host(.no-home) #line-grid-home,
+      :host(.no-home) #dot-grid-home {
+        display: none;
       }
 
       :host(.no-battery) #line-pv-battery,
@@ -1037,14 +1049,15 @@ class CompactPowerCard extends CompactPowerCardBase {
           const prevH = this._hostHeight;
           this._hostWidth = newW;
           this._hostHeight = newH;
-          const widthChanged = prevW != null && newW !== prevW;
-          if (this._externalHeight == null) {
-            this._externalHeight = newH;
-          } else if (widthChanged || newH < this._externalHeight - 24) {
-            // Only trust height updates when the card width changes or on meaningful shrink.
-            this._externalHeight = newH;
-          }
-          if (prevW == null || prevH == null) {
+          // The SVG no longer drives the card height, so the measured size can always be
+          // trusted (no feedback loop); re-render whenever it actually changes.
+          this._externalHeight = newH;
+          if (
+            prevW == null ||
+            prevH == null ||
+            Math.abs(newW - prevW) > 1 ||
+            Math.abs(newH - prevH) > 1
+          ) {
             this.requestUpdate();
           }
         }
@@ -2041,6 +2054,10 @@ class CompactPowerCard extends CompactPowerCardBase {
     if (battDischarge > 0)
       active["battery-home"] = { geom: geom["battery-home"], magnitude: battDischarge, color: batteryColor };
 
+    // Grid → Home: only without a battery (with a battery, grid import is shown via the battery)
+    if (!hasBattery && gridImport > 0)
+      active["grid-home"] = { geom: geom["grid-home"], magnitude: gridImport, color: gridColor };
+
     // DISABLED: Battery → Grid flow
     // if (batteryToGrid > threshold)
     //   active["battery-grid"] = {
@@ -2075,10 +2092,10 @@ class CompactPowerCard extends CompactPowerCardBase {
       "pv-battery",      // PV → Battery
       "grid-battery",    // Grid/Charger → Battery
       "battery-home",    // Battery → Home
+      "grid-home",       // Grid → Home (no-battery setups only)
       // Disabled flows:
       // "pv-home",
       // "pv-grid",
-      // "grid-home",
       // "battery-grid",
     ];
 
@@ -3003,14 +3020,15 @@ class CompactPowerCard extends CompactPowerCardBase {
       ]
         .filter(Boolean)
         .join(" ")}">
-        <div class="canvas">
+        <div class="canvas" style="--cpc-design-height:${designHeight}px;">
           <svg viewBox="0 0 ${baseWidth} ${viewHeight}" preserveAspectRatio="xMidYMid meet">
 
           <!-- Flow lines - only showing PV→Battery, Battery→Home, Grid→Battery -->
           <!-- Hidden: line-pv-grid -->
           <!-- Hidden: line-pv-home -->
           <path id="line-pv-battery" class="flow-line" fill="none" d="${pvBatteryPath}" />
-          <!-- Hidden: line-grid-home -->
+          <!-- Grid→Home: only shown when no battery is configured (CSS hides it otherwise) -->
+          <path id="line-grid-home" class="flow-line" fill="none" d="${gridHomePath}" />
           <path id="line-home-battery" class="flow-line" fill="none" d="${batteryHomePath}" />
           <path id="arc-grid-battery" class="flow-line" fill="none" d="${gridBatteryPath}" />
           <g id="device-lines"></g>
@@ -3019,7 +3037,7 @@ class CompactPowerCard extends CompactPowerCardBase {
           <!-- Hidden: dot-pv-home -->
           <!-- Hidden: dot-pv-grid -->
           <circle id="dot-pv-battery"   r="4" fill="${pvColor}" opacity="0" />
-          <!-- Hidden: dot-grid-home -->
+          <circle id="dot-grid-home"    r="4" fill="${gridColor}" opacity="0" />
           <circle id="dot-grid-battery" r="4" fill="${gridColor}" opacity="0" />
           <circle id="dot-battery-home" r="4" fill="${batteryColor}" opacity="0" />
           <!-- Hidden: dot-battery-grid (we only show grid→battery, not battery→grid) -->
