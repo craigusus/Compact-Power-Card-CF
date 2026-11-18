@@ -99,6 +99,7 @@ This card is designed for the new [Home Assistant Sections UI](https://www.home-
 | Subtract devices from home | `subtract_devices_from_home` | If true, subtract summed devices from the home value. Default: `false`. |
 | Power Unit Override | `power_unit`| Set to W, kW or mW |
 | Curved Line Radius | `curve_factor`| Adjusts the curve radius. `0` to `5`, `1` is default. Set to `0` for straight lines. |
+| Device Order | `device_order`| `alternate` (default) fans devices out from the house: 1 left, 2 right, 3 left… `left_to_right` places them in list order: 1 2 3 4 [house] 5 6 7 8, then extra rows. |
 | Device Power Lines | `show_device_power_lines`| Set to `true` to light up devices when power is flowing beyond a threshold. Default `false` |
 | Home Icon Gradient | `disable_home_gradient`| Set to `true` if you want the home icon to be a single colour. |
 | Remove Glow Effects | `remove_glow_effects`| Set to `true` to disable drop shadow/glow effects. Default `false` (dark mode only). |
@@ -243,6 +244,7 @@ Devices are power feeds within your home that you want to show in the card. By d
 | Name Label            | `name`                  | Show a label for each device. Can use either a string or entity ID. Only works with card set to 4 or more rows in height in the sections UI. [See here](https://github.com/pacemaker82/Compact-Power-Card#managing-the-size-of-the-card) for more                                              |
 | Icon             | `icon`                  | Optional icon for the device badge.                                              |
 | Color            | `color`                 | Optional color override for that device.                                         |
+| Color segments   | `segments`              | Dynamic colour like the gauge card: a list of `from` / `color`. The segment with the highest `from` the value has reached is used; below all of them, `color` (or the default) applies. `from` is in the entity's own unit. |
 | Threshold        | `threshold`             | Dims/zeros device below threshold (in watts) (per `threshold_mode`).                        |
 | Force hide under threshold | `force_hide_under_threshold` | If true, hides the device entirely when under threshold. Will hide at 0 W if no threshold set. |
 | Decimals         | `decimal_places`        | Decimal places for that device (defaults to card-level `decimal_places`).                                                  |
@@ -262,6 +264,15 @@ Example below of how devices can be setup:
     - entity: sensor.pool_pump_power
       icon: mdi:pool
       threshold: 50
+    - entity: sensor.server_power
+      icon: mdi:server
+      segments:
+        - from: 0
+          color: "#4db6ac"
+        - from: 150
+          color: orange
+        - from: 300
+          color: red
     - entity: climate.garage
       attribute: temperature
       unit: "C"

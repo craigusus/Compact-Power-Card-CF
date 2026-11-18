@@ -1625,6 +1625,20 @@ class CompactPowerCard extends CompactPowerCardBase {
     return Math.abs(value) < threshold ? 0.4 : 1;
   }
 
+  // Gauge-style colour segments: [{ from: 0, color: "green" }, { from: 100, color: "red" }].
+  // The segment with the highest `from` that the value has reached wins; below all of them
+  // (or for a non-numeric value) the fallback colour is used. `from` is in the entity's own unit.
+  _resolveSegmentColor(segments, value, fallback) {
+    if (!Array.isArray(segments) || !Number.isFinite(value)) return fallback;
+    let best = null;
+    for (const seg of segments) {
+      const from = Number(seg?.from);
+      if (!seg?.color || !Number.isFinite(from) || value < from) continue;
+      if (!best || from >= best.from) best = { from, color: seg.color };
+    }
+    return best ? best.color : fallback;
+  }
+
   _isBelowThreshold(value, threshold) {
     if (!Number.isFinite(value)) return false;
     if (!Number.isFinite(threshold) || threshold <= 0) return false;
@@ -2639,9 +2653,21 @@ class CompactPowerCard extends CompactPowerCardBase {
       const spacingBase = 56 * (deviceWidth / designWidth); // scale baseline with view width (44 at 512px)
       const spacing = Math.max(spacingBase, (deviceWidth - pad * 2) / 10); // base spacing; spreads as width grows
 
+      // device_order: "alternate" (default) fans out from the house: 1 left, 2 right, 3 left...
+      // "left_to_right" uses the same slots but in reading order: 1 2 3 4 [house] 5 6 7 8.
+      const leftToRight =
+        String(this._config?.device_order || "alternate").toLowerCase() === "left_to_right";
+      const leftCount = Math.ceil(maxDevices / 2);
       for (let i = 0; i < maxDevices; i++) {
-        const ring = Math.floor(i / 2) + 1; // 1,1,2,2,3,3...
-        const dir = i % 2 === 0 ? -1 : 1; // left, right alternating
+        let ring;
+        let dir;
+        if (leftToRight) {
+          dir = i < leftCount ? -1 : 1;
+          ring = i < leftCount ? leftCount - i : i - leftCount + 1;
+        } else {
+          ring = Math.floor(i / 2) + 1; // 1,1,2,2,3,3...
+          dir = i % 2 === 0 ? -1 : 1; // left, right alternating
+        }
         const rawX = homeX + dir * spacing * ring;
         const clampedX = Math.max(pad, Math.min(deviceWidth - pad, rawX));
         sourcePositions.push({ x: clampedX, y: homeRowYBase, leftPct: (clampedX / deviceWidth) * 100 });
@@ -2683,7 +2709,7 @@ class CompactPowerCard extends CompactPowerCardBase {
       let val = Number.isFinite(numericW)
         ? this._formatPowerWithOverride(numericW, decimals, "W", unitOverride ?? null)
         : this._formatEntity(entity, decimals, attribute, unitOverride);
-      const color = src.color || homeColor;
+      const color = this._resolveSegmentColor(src.segments, numeric, src.color || homeColor);
       const pos = sourcePositions[idx] || { x: homeX, y: homeRowYBase };
       const threshold = this._toWatts(this._parseThreshold(src.threshold), "W", true);
       const opacity = this._opacityFor(numericW, threshold);
